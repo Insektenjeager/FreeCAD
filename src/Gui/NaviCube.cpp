@@ -44,6 +44,7 @@
 # include <QPainterPath>
 #endif
 
+#include <App/Color.h>
 #include <Base/Tools.h>
 #include <Eigen/Dense>
 
@@ -208,7 +209,7 @@ public:
     QColor m_TextColor;
     QColor m_HiliteColor;
     QColor m_ButtonColor;
-    QColor m_FrontFaceColor;
+    QColor m_FrontColor;
     QColor m_BorderColor;
     int m_HiliteId = 0;
     bool m_MouseDown = false;
@@ -292,17 +293,40 @@ void NaviCube::setFontSize(int size)
     m_NaviCubeImplementation->m_CubeTextSize = size;
 }
 
+void NaviCube::setTextColor(QColor TextColor)
+{
+    m_NaviCubeImplementation->m_TextColor = TextColor;
+}
+
+void NaviCube::setFrontColor(QColor FrontColor)
+{
+    m_NaviCubeImplementation->m_FrontColor = FrontColor;
+}
+
+void NaviCube::setHiliteColor(QColor HiliteColor)
+{
+    m_NaviCubeImplementation->m_HiliteColor = HiliteColor;
+}
+
+void NaviCube::setButtonColor(QColor ButtonColor)
+{
+    m_NaviCubeImplementation->m_ButtonColor = ButtonColor;
+}
+
+void NaviCube::setBorderWidth(double BorderWidth)
+{
+    m_NaviCubeImplementation->m_BorderWidth = BorderWidth;
+}
+
+void NaviCube::setBorderColor(QColor BorderColor)
+{
+    m_NaviCubeImplementation->m_BorderColor = BorderColor;
+}
+
 QString NaviCube::getDefaultSansserifFont()
 {
-    // Windows versions since 2017 have the 'Bahnschrift' font (a condensed
-    // sans serif font, optimized for readability despite being condensed),
-    // we first check for that.
-    QFont font(QStringLiteral("Bahnschrift"));
-    if (!font.exactMatch())
-        // On systems without 'Bahnschrift' we check for 'Helvetica' or its closest match
-        // as default sans serif font. (For Windows 7 this will e.g. result in 'Arial'.)
-        font = QFont(QStringLiteral("Helvetica"));
-
+    // "FreeCAD NaviCube" family susbtitutions are set in MainWindow::MainWindow
+    QFont font(QStringLiteral("FreeCAD NaviCube"));
     font.setStyleHint(QFont::SansSerif);
     // QFontInfo is required to get the actually matched font family
     return QFontInfo(font).family();
@@ -370,16 +394,26 @@ void NaviCubeImplementation::OnChange(ParameterGrp::SubjectType& rCaller,
     const auto& rGrp = static_cast<ParameterGrp&>(rCaller);
 
     if (strcmp(reason, "TextColor") == 0) {
-        m_TextColor.setRgba(rGrp.GetUnsigned(reason, QColor(0, 0, 0, 255).rgba()));
+        // the colors are stored in the form RRGGBBAA as unsigned long
+        // QColor expects the form AARRGGBB therefore we must make a shift in writing to QColor
+        unsigned long col = rGrp.GetUnsigned(reason, 255);
+        // 255 is RRR,GGG,BBB,AAA: 0,0,0,255
+        m_TextColor = App::Color::fromPackedRGBA<QColor>(col);
     }
     else if (strcmp(reason, "FrontColor") == 0) {
-        m_FrontFaceColor.setRgba(rGrp.GetUnsigned(reason, QColor(226, 233, 239, 192).rgba()));
+        unsigned long col = rGrp.GetUnsigned(reason, 3806916544);
+        // 3236096495 is RRR,GGG,BBB,AAA: 226,232,239,192
+        m_FrontColor = App::Color::fromPackedRGBA<QColor>(col);
     }
     else if (strcmp(reason, "HiliteColor") == 0) {
-        m_HiliteColor.setRgba(rGrp.GetUnsigned(reason, QColor(170, 226, 255, 255).rgba()));
+        unsigned long col = rGrp.GetUnsigned(reason, 2867003391);
+        // 2867003391  is RRR,GGG,BBB,AAA: 170,226,255,255
+        m_HiliteColor = App::Color::fromPackedRGBA<QColor>(col);
     }
     else if (strcmp(reason, "ButtonColor") == 0) {
-        m_ButtonColor.setRgba(rGrp.GetUnsigned(reason, QColor(226, 233, 239, 128).rgba()));
+        unsigned long col = rGrp.GetUnsigned(reason, 3806916480);
+        // 3806916480 is RRR,GGG,BBB,AAA: 226,232,239,128
+        m_ButtonColor = App::Color::fromPackedRGBA<QColor>(col);
     }
     else if (strcmp(reason, "CornerNaviCube") == 0) {
         m_Corner = static_cast<NaviCube::Corner>(rGrp.GetInt(reason, 1));
@@ -397,7 +431,9 @@ void NaviCubeImplementation::OnChange(ParameterGrp::SubjectType& rCaller,
         m_BorderWidth = rGrp.GetFloat(reason, 1.1);
     }
     else if (strcmp(reason, "BorderColor") == 0) {
-        m_BorderColor.setRgba(rGrp.GetUnsigned(reason, QColor(50, 50, 50, 255).rgba()));
+        unsigned long col = rGrp.GetUnsigned(reason, 842150655);
+        // 842150655 is RRR,GGG,BBB,AAA: 50,50,50,255
+        m_BorderColor = App::Color::fromPackedRGBA<QColor>(col);
     }
     else if (strcmp(reason, "FontSize") == 0) {
         m_CubeTextSize = rGrp.GetInt(reason, getDefaultFontSize());
@@ -790,7 +826,7 @@ void NaviCubeImplementation::addFace(float gap, const Vector3f& x, const Vector3
         pickId,
         pickTex,
         m_Textures[pickTex],
-        m_FrontFaceColor,
+        m_FrontColor,
         1);
     m_Faces.push_back(FaceFront);
 

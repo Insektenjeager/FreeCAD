@@ -80,6 +80,7 @@
 #include "DownloadManager.h"
 #include "FileDialog.h"
 #include "MenuManager.h"
+#include "NotificationArea.h"
 #include "ProgressBar.h"
 #include "PropertyView.h"
 #include "PythonConsole.h"
@@ -102,6 +103,7 @@
 #include "View3DInventorViewer.h"
 #include "DlgObjectSelection.h"
 #include "Tools.h"
+#include <App/Color.h>
 
 FC_LOG_LEVEL_INIT("MainWindow",false,true,true)
 
@@ -250,7 +252,6 @@ protected:
 
 } // namespace Gui
 
-
 /* TRANSLATOR Gui::MainWindow */
 
 MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
@@ -303,6 +304,17 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
     statusBar()->addPermanentWidget(progressBar, 0);
     statusBar()->addPermanentWidget(d->sizeLabel, 0);
 
+    auto hGrp = App::GetApplication().GetParameterGroupByPath("User parameter:BaseApp/Preferences/NotificationArea");
+
+    auto notificationAreaEnabled = hGrp->GetBool("NotificationAreaEnabled", true);
+
+    if(notificationAreaEnabled) {
+        NotificationArea* notificationArea = new NotificationArea(statusBar());
+        notificationArea->setObjectName(QString::fromLatin1("notificationArea"));
+        notificationArea->setIcon(QIcon(QString::fromLatin1(":/icons/InTray.svg")));
+        notificationArea->setStyleSheet(QStringLiteral("text-align:left;"));
+        statusBar()->addPermanentWidget(notificationArea);
+    }
     // clears the action label
     d->actionTimer = new QTimer( this );
     d->actionTimer->setObjectName(QString::fromLatin1("actionTimer"));
@@ -346,6 +358,17 @@ MainWindow::MainWindow(QWidget * parent, Qt::WindowFlags f)
 
     // accept drops on the window, get handled in dropEvent, dragEnterEvent
     setAcceptDrops(true);
+
+    // setup font substitutions for NaviCube
+    // Helvetica usually gives good enough results on mac & linux
+    // in rare cases Helvetica matches a bad font on linux
+    // Nimbus Sans Narrow and Open Sans Condensed added as fallback
+    // Bahnschrift is a condensed font available on windows versions since 2017
+    // Arial added as fallback for older version
+    auto substitutions = QStringLiteral("Bahnschrift,Helvetica,Nimbus Sans Narrow,Open Sans Condensed,Arial,Sans");
+    auto family = QStringLiteral("FreeCAD NaviCube");
+    QFont::insertSubstitutions(family, substitutions.split(QLatin1Char(',')));
+
     statusBar()->showMessage(tr("Ready"), 2001);
 }
 
@@ -2124,20 +2147,26 @@ void StatusBarObserver::OnChange(Base::Subject<const char*> &rCaller, const char
     auto format = QString::fromLatin1("#statusBar{color: %1}");
     if (strcmp(sReason, "colorText") == 0) {
         unsigned long col = rclGrp.GetUnsigned( sReason );
-        this->msg = format.arg(QColor((col >> 24) & 0xff,(col >> 16) & 0xff,(col >> 8) & 0xff).name());
+        this->msg = format.arg(App::Color::fromPackedRGB<QColor>(col).name());
     }
     else if (strcmp(sReason, "colorWarning") == 0) {
         unsigned long col = rclGrp.GetUnsigned( sReason );
-        this->wrn = format.arg(QColor((col >> 24) & 0xff,(col >> 16) & 0xff,(col >> 8) & 0xff).name());
+        this->wrn = format.arg(App::Color::fromPackedRGB<QColor>(col).name());
     }
     else if (strcmp(sReason, "colorError") == 0) {
         unsigned long col = rclGrp.GetUnsigned( sReason );
-        this->err = format.arg(QColor((col >> 24) & 0xff,(col >> 16) & 0xff,(col >> 8) & 0xff).name());
+        this->err = format.arg(App::Color::fromPackedRGB<QColor>(col).name());
+    }
+    else if (strcmp(sReason, "colorCritical") == 0) {
+        unsigned long col = rclGrp.GetUnsigned( sReason );
+        this->critical = format.arg(QColor((col >> 24) & 0xff,(col >> 16) & 0xff,(col >> 8) & 0xff).name());
     }
 }
 
-void StatusBarObserver::SendLog(const std::string& msg, Base::LogStyle level)
+void StatusBarObserver::SendLog(const std::string& notifiername, const std::string& msg, Base::LogStyle level)
 {
+    (void) notifiername;
+
     int messageType = -1;
     switch(level){
         case Base::LogStyle::Warning:
@@ -2151,6 +2180,11 @@ void StatusBarObserver::SendLog(const std::string& msg, Base::LogStyle level)
             break;
         case Base::LogStyle::Log:
             messageType = MainWindow::Log;
+            break;
+        case Base::LogStyle::Critical:
+            messageType = MainWindow::Critical;
+            break;
+        default:
             break;
     }
 

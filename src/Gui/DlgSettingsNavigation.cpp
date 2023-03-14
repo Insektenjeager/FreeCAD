@@ -57,6 +57,7 @@ DlgSettingsNavigation::DlgSettingsNavigation(QWidget* parent)
     , q0(0), q1(0), q2(0), q3(1)
 {
     ui->setupUi(this);
+    ui->naviCubeButtonColor->setAllowTransparency(true);
     retranslate();
 }
 
@@ -93,6 +94,7 @@ void DlgSettingsNavigation::saveSettings()
     ui->naviCubeToNearest->onSave();
     ui->prefCubeSize->onSave();
     ui->naviCubeFontSize->onSave();
+    ui->naviCubeButtonColor->onSave();
 
     bool showNaviCube = ui->groupBoxNaviCube->isChecked();
     hGrp->SetBool("ShowNaviCube", showNaviCube);
@@ -141,6 +143,7 @@ void DlgSettingsNavigation::loadSettings()
     ui->naviCubeToNearest->onRestore();
     ui->prefCubeSize->onRestore();
     ui->naviCubeFontSize->onRestore();
+    ui->naviCubeButtonColor->onRestore();
 
     ParameterGrp::handle hGrp = App::GetApplication().GetParameterGroupByPath
         ("User parameter:BaseApp/Preferences/View");
@@ -208,8 +211,9 @@ void DlgSettingsNavigation::loadSettings()
     // but not accessible if there is no cube yet drawn
     if (hGrp->GetInt("FontSize", 0) == 0) {
         // the "4" is the hardcoded m_OverSample from getDefaultFontSize()
-        hGrp->SetInt("FontSize", int(0.18 * 4 * ui->prefCubeSize->value()));
-        ui->naviCubeFontSize->onRestore();
+        ui->naviCubeFontSize->setValue(int(0.18 * 4 * ui->prefCubeSize->value()));
+        // we purposely don't write to the parameters because the writing would
+        // also be done when the user cancels the preferences dialog
     }
 }
 

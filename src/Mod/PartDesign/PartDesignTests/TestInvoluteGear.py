@@ -23,6 +23,7 @@ import unittest
 import pathlib
 
 import FreeCAD
+from FreeCAD import Vector
 from Part import makeCircle, Precision
 import InvoluteGearFeature
 
@@ -59,6 +60,25 @@ class TestInvoluteGear(unittest.TestCase):
         gear.HighPrecision = False
         self.assertSuccessfulRecompute(gear)
         self.assertClosedWire(gear.Shape)
+
+    def testExternalGearProfileOrientation(self):
+        gear = InvoluteGearFeature.makeInvoluteGear('TestGear')
+        self.assertSuccessfulRecompute(gear)
+        tip_diameter = (gear.NumberOfTeeth + 2 * gear.AddendumCoefficient) * gear.Modules
+        delta = 0.01 # yes, we do not reach micrometer precision
+        tip_probe = makeCircle(delta, Vector(tip_diameter/2, 0, 0))
+        self.assertIntersection(gear.Shape, tip_probe,
+            msg=f"First tooth tip does not lay on the positive X-axis")
+
+    def testInternalGearProfileOrientation(self):
+        gear = InvoluteGearFeature.makeInvoluteGear('TestGear')
+        gear.ExternalGear = False
+        self.assertSuccessfulRecompute(gear)
+        tip_diameter = (gear.NumberOfTeeth - 2 * gear.AddendumCoefficient) * gear.Modules
+        delta = 0.01 # yes, we do not reach micrometer precision
+        tip_probe = makeCircle(delta, Vector(tip_diameter/2, 0, 0))
+        self.assertIntersection(gear.Shape, tip_probe,
+            msg=f"First tooth tip does not lay on the positive X-axis")
 
     def testCustomizedGearProfile(self):
         gear = InvoluteGearFeature.makeInvoluteGear('InvoluteGear')
@@ -129,6 +149,29 @@ class TestInvoluteGear(unittest.TestCase):
         self.assertIntersection(hub.Shape, makeCircle(pitch_diameter/2), "Expecting intersection at pitch circle")
         self.assertNoIntersection(hub.Shape, makeCircle(tip_diameter/2 - delta), "Teeth extent below tip circle")
         self.assertNoIntersection(hub.Shape, makeCircle(root_diameter/2 + delta), "Teeth extend beyond root circle")
+
+    def testZeroFilletExternalGearProfile_BaseAboveRoot(self):
+        gear = InvoluteGearFeature.makeInvoluteGear('InvoluteGear')
+        # below 42 teeth, with default dedendum 1.25, we have some non-involute flanks
+        gear.NumberOfTeeth = 41
+        gear.RootFilletCoefficient = 0
+        self.assertSuccessfulRecompute(gear)
+        self.assertClosedWire(gear.Shape)
+
+    def testZeroFilletExternalGearProfile_BaseBelowRoot(self):
+        gear = InvoluteGearFeature.makeInvoluteGear('InvoluteGear')
+        # above 41 teeth, with default dedendum 1.25, the root is within the involute flank
+        gear.NumberOfTeeth = 42
+        gear.RootFilletCoefficient = 0
+        self.assertSuccessfulRecompute(gear)
+        self.assertClosedWire(gear.Shape)
+
+    def testZeroFilletInternalGearProfile(self):
+        gear = InvoluteGearFeature.makeInvoluteGear('InvoluteGear')
+        gear.ExternalGear = False
+        gear.RootFilletCoefficient = 0
+        self.assertSuccessfulRecompute(gear)
+        self.assertClosedWire(gear.Shape)
 
     def testUsagePadGearProfile(self):
         profile = InvoluteGearFeature.makeInvoluteGear('GearProfile')

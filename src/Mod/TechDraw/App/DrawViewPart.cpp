@@ -318,11 +318,21 @@ void DrawViewPart::partExec(TopoDS_Shape& shape)
 //prepare the shape for HLR processing by centering, scaling and rotating it
 GeometryObjectPtr DrawViewPart::makeGeometryForShape(TopoDS_Shape& shape)
 {
-    //    Base::Console().Message("DVP::makeGeometryForShape() - %s\n", getNameInDocument());
-    gp_Pnt inputCenter = TechDraw::findCentroid(shape, getProjectionCS());
-    m_saveCentroid = DU::toVector3d(inputCenter);
-    m_saveShape = centerScaleRotate(this, shape, m_saveCentroid);
-    GeometryObjectPtr go = buildGeometryObject(shape, getProjectionCS());
+//    Base::Console().Message("DVP::makeGeometryForShape() - %s\n", getNameInDocument());
+
+    // if we use the passed reference directly, the centering doesn't work.  Maybe the underlying OCC TShape
+    // isn't modified?  using a copy works and the referenced shape (from getSourceShape in execute())
+    // isn't used for anything anyway.
+    bool copyGeometry = true;
+    bool copyMesh = false;
+    BRepBuilderAPI_Copy copier(shape, copyGeometry, copyMesh);
+    TopoDS_Shape localShape = copier.Shape();
+
+    gp_Pnt gCentroid = TechDraw::findCentroid(localShape, getProjectionCS());
+    m_saveCentroid = DU::toVector3d(gCentroid);
+    m_saveShape = centerScaleRotate(this, localShape, m_saveCentroid);
+
+    GeometryObjectPtr go = buildGeometryObject(localShape, getProjectionCS());
     return go;
 }
 
@@ -330,7 +340,7 @@ GeometryObjectPtr DrawViewPart::makeGeometryForShape(TopoDS_Shape& shape)
 TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& inOutShape,
                                              Base::Vector3d centroid)
 {
-    //    Base::Console().Message("DVP::centerScaleRotate() - %s\n", dvp->getNameInDocument());
+//    Base::Console().Message("DVP::centerScaleRotate() - %s\n", dvp->getNameInDocument());
     gp_Ax2 viewAxis = dvp->getProjectionCS();
 
     //center shape on origin
@@ -345,12 +355,11 @@ TopoDS_Shape DrawViewPart::centerScaleRotate(DrawViewPart* dvp, TopoDS_Shape& in
     return centeredShape;
 }
 
-
 //create a geometry object and trigger the HLR process in another thread
 TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shape,
                                                               const gp_Ax2& viewAxis)
 {
-    //    Base::Console().Message("DVP::buildGeometryObject() - %s\n", getNameInDocument());
+//    Base::Console().Message("DVP::buildGeometryObject() - %s\n", getNameInDocument());
     showProgressMessage(getNameInDocument(), "is finding hidden lines");
 
     TechDraw::GeometryObjectPtr go(
@@ -366,6 +375,15 @@ TechDraw::GeometryObjectPtr DrawViewPart::buildGeometryObject(TopoDS_Shape& shap
         go->projectShapeWithPolygonAlgo(shape, viewAxis);
     }
     else {
+        // TODO: we should give the thread its own copy of the shape because the passed one will be
+        // destroyed when the call stack we followed to get here unwinds and the thread could still be
+        // running.
+        // Should we pass a smart pointer instead of const& ??
+    //    bool copyGeometry = true;
+    //    bool copyMesh = false;
+    //    BRepBuilderAPI_Copy copier(shape, copyGeometry, copyMesh);
+    //    copier.Shape();
+
         //projectShape (the HLR process) runs in a separate thread since it can take a long time
         //note that &m_hlrWatcher in the third parameter is not strictly required, but using the
         //4 parameter signature instead of the 3 parameter signature prevents clazy warning:
@@ -569,7 +587,7 @@ void DrawViewPart::extractFaces()
         bool copyGeometry = true;
         bool copyMesh = false;
         for (const auto& e : goEdges) {
-            BRepBuilderAPI_Copy copier(e->occEdge, copyGeometry, copyMesh);
+            BRepBuilderAPI_Copy copier(e->getOCCEdge(), copyGeometry, copyMesh);
             copyEdges.push_back(TopoDS::Edge(copier.Shape()));
         }
         std::vector<TopoDS_Edge> nonZero;
@@ -865,7 +883,7 @@ TechDraw::VertexPtr DrawViewPart::getProjVertexByCosTag(std::string cosTag)
     }
 
     for (auto& gv : gVerts) {
-        if (gv->cosmeticTag == cosTag) {
+        if (gv->getCosmeticTag() == cosTag) {
             result = gv;
             break;
         }
@@ -883,7 +901,7 @@ std::vector<TechDraw::BaseGeomPtr> DrawViewPart::getFaceEdgesByIndex(int idx) co
         TechDraw::FacePtr projFace = faces.at(idx);
         for (auto& w : projFace->wires) {
             for (auto& g : w->geoms) {
-                if (g->cosmetic) {
+                if (g->getCosmetic()) {
                     //if g is cosmetic, we should skip it
                     continue;
                 }
@@ -904,10 +922,8 @@ std::vector<TopoDS_Wire> DrawViewPart::getWireForFace(int idx) const
     TechDraw::FacePtr ourFace = faces.at(idx);
     for (auto& w : ourFace->wires) {
         edges.clear();
-        int i = 0;
         for (auto& g : w->geoms) {
-            edges.push_back(g->occEdge);
-            i++;
+            edges.push_back(g->getOCCEdge());
         }
         TopoDS_Wire occwire = EdgeWalker::makeCleanWire(edges);
         result.push_back(occwire);
@@ -1146,10 +1162,27 @@ Base::Vector3d DrawViewPart::getOriginalCentroid() const { return m_saveCentroid
 Base::Vector3d DrawViewPart::getCurrentCentroid() const
 {
     TopoDS_Shape shape = getSourceShape();
-    gp_Ax2 cs = getProjectionCS(Base::Vector3d(0.0, 0.0, 0.0));
-    Base::Vector3d center = TechDraw::findCentroidVec(shape, cs);
-    return center;
+    if (shape.IsNull()) {
+        return Base::Vector3d(0.0, 0.0, 0.0);
+    }
+    gp_Ax2 cs = getProjectionCS();
+    gp_Pnt gCenter = TechDraw::findCentroid(shape, cs);
+    return DU::toVector3d(gCenter);
 }
+
+
+Base::Vector3d DrawViewPart::getLocalOrigin3d() const
+{
+    return getCurrentCentroid();
+}
+
+Base::Vector3d DrawViewPart::getLocalOrigin2d() const
+{
+    Base::Vector3d centroid = getCurrentCentroid();
+    Base::Vector3d localOrigin = projectPoint(centroid, false);
+    return localOrigin;
+}
+
 
 std::vector<DrawViewSection*> DrawViewPart::getSectionRefs() const
 {
@@ -1279,15 +1312,11 @@ bool DrawViewPart::checkXDirection() const
     //    Base::Console().Message("DVP::checkXDirection()\n");
     Base::Vector3d xDir = XDirection.getValue();
     if (DrawUtil::fpCompare(xDir.Length(), 0.0)) {
-        Base::Vector3d dir = Direction.getValue();
-        Base::Vector3d origin(0.0, 0.0, 0.0);
-        Base::Vector3d xDir = getLegacyX(origin, dir);
         return false;
     }
     return true;
 }
 
-//
 Base::Vector3d DrawViewPart::getXDirection() const
 {
     //    Base::Console().Message("DVP::getXDirection() - %s\n", Label.getValue());
@@ -1327,7 +1356,7 @@ void DrawViewPart::updateReferenceVert(std::string tag, Base::Vector3d loc2d)
 {
     for (auto& v : m_referenceVerts) {
         if (v->getTagAsString() == tag) {
-            v->pnt = loc2d;
+            v->point(loc2d);
             break;
         }
     }
@@ -1352,7 +1381,7 @@ std::string DrawViewPart::addReferenceVertex(Base::Vector3d v)
     //    TechDraw::Vertex* ref = new TechDraw::Vertex(scaledV);
     Base::Vector3d scaledV = v;
     TechDraw::VertexPtr ref(std::make_shared<TechDraw::Vertex>(scaledV));
-    ref->reference = true;
+    ref->isReference(true);
     refTag = ref->getTagAsString();
     m_referenceVerts.push_back(ref);
     return refTag;
@@ -1380,7 +1409,7 @@ void DrawViewPart::removeAllReferencesFromGeom()
         std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
         std::vector<TechDraw::VertexPtr> newVerts;
         for (auto& gv : gVerts) {
-            if (!gv->reference) {
+            if (!gv->isReference()) {
                 newVerts.push_back(gv);
             }
         }
@@ -1437,7 +1466,7 @@ void DrawViewPart::refreshCVGeoms()
     std::vector<TechDraw::VertexPtr> gVerts = getVertexGeometry();
     std::vector<TechDraw::VertexPtr> newGVerts;
     for (auto& gv : gVerts) {
-        if (gv->cosmeticTag.empty()) {//keep only non-cv vertices
+        if (gv->getCosmeticTag().empty()) {//keep only non-cv vertices
             newGVerts.push_back(gv);
         }
     }
@@ -1456,7 +1485,7 @@ int DrawViewPart::getCVIndex(std::string tag)
     int i = 0;
     bool found = false;
     for (auto& gv : gVerts) {
-        if (gv->cosmeticTag == tag) {
+        if (gv->getCosmeticTag() == tag) {
             result = i;
             found = true;
             break;

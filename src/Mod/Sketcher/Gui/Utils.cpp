@@ -146,6 +146,32 @@ void SketcherGui::getIdsFromName(const std::string& name, const Sketcher::Sketch
     }
 }
 
+std::vector<int> SketcherGui::getGeoIdsOfEdgesFromNames(const Sketcher::SketchObject* Obj, const std::vector<std::string> & names)
+{
+    std::vector<int> geoids;
+
+    for(const auto & name : names) {
+        if (name.size() > 4 && name.substr(0, 4) == "Edge") {
+            geoids.push_back(std::atoi(name.substr(4, 4000).c_str()) - 1);
+        }
+        else if (name.size() > 12 && name.substr(0, 12) == "ExternalEdge") {
+            geoids.push_back(Sketcher::GeoEnum::RefExt + 1 - std::atoi(name.substr(12, 4000).c_str()));
+        }
+        else if (name.size() > 6 && name.substr(0, 6) == "Vertex") {
+            int VtId = std::atoi(name.substr(6, 4000).c_str()) - 1;
+            int GeoId;
+            Sketcher::PointPos PosId;
+            Obj->getGeoVertexIndex(VtId, GeoId, PosId);
+            const Part::Geometry* geo = Obj->getGeometry(GeoId);
+            if (geo->getTypeId() == Part::GeomPoint::getClassTypeId()){
+                geoids.push_back(GeoId);
+            }
+        }
+    }
+
+    return geoids;
+}
+
 bool SketcherGui::checkBothExternal(int GeoId1, int GeoId2)
 {
     if (GeoId1 == GeoEnum::GeoUndef || GeoId2 == GeoEnum::GeoUndef)
@@ -315,22 +341,28 @@ void SketcherGui::ActivateHandler(Gui::Document* doc, DrawSketchHandler* handler
     }
 }
 
-bool SketcherGui::isCommandActive(Gui::Document* doc, bool actsOnSelection)
-{
+bool SketcherGui::isSketchInEdit(Gui::Document* doc) {
     if (doc) {
         // checks if a Sketch Viewprovider is in Edit and is in no special mode
-        if (doc->getInEdit()
-            && doc->getInEdit()->isDerivedFrom(SketcherGui::ViewProviderSketch::getClassTypeId())) {
-            auto mode =
-                static_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getSketchMode();
-            if (mode == ViewProviderSketch::STATUS_NONE
-                || mode == ViewProviderSketch::STATUS_SKETCH_UseHandler) {
-                if (!actsOnSelection)
-                    return true;
-                else if (Gui::Selection().countObjectsOfType(
-                             Sketcher::SketchObject::getClassTypeId())
-                         > 0)
-                    return true;
+        auto* vp = dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit());
+        return (vp != nullptr);
+    }
+    return false;
+}
+
+bool SketcherGui::isCommandActive(Gui::Document* doc, bool actsOnSelection)
+{
+    if(isSketchInEdit(doc)) {
+        auto mode = static_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit())->getSketchMode();
+
+        if (mode == ViewProviderSketch::STATUS_NONE ||
+            mode == ViewProviderSketch::STATUS_SKETCH_UseHandler) {
+
+            if (!actsOnSelection) {
+                return true;
+            }
+            else if (Gui::Selection().countObjectsOfType(Sketcher::SketchObject::getClassTypeId()) > 0) {
+                return true;
             }
         }
     }
@@ -338,14 +370,20 @@ bool SketcherGui::isCommandActive(Gui::Document* doc, bool actsOnSelection)
     return false;
 }
 
-SketcherGui::ViewProviderSketch* SketcherGui::getSketchViewprovider(Gui::Document* doc)
+SketcherGui::ViewProviderSketch* SketcherGui::getInactiveHandlerEditModeSketchViewProvider(Gui::Document* doc)
 {
-    if (doc) {
-        if (doc->getInEdit()
-            && doc->getInEdit()->isDerivedFrom(SketcherGui::ViewProviderSketch::getClassTypeId()))
-            return dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit());
+    if(doc) {
+        return dynamic_cast<SketcherGui::ViewProviderSketch*>(doc->getInEdit());
     }
+
     return nullptr;
+}
+
+SketcherGui::ViewProviderSketch* SketcherGui::getInactiveHandlerEditModeSketchViewProvider()
+{
+    Gui::Document *doc = Gui::Application::Instance->activeDocument();
+
+    return getInactiveHandlerEditModeSketchViewProvider(doc);
 }
 
 void SketcherGui::removeRedundantHorizontalVertical(Sketcher::SketchObject* psketch,
