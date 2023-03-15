@@ -171,6 +171,7 @@ SET(PathPythonOp_SRCS
     Path/Op/Drilling.py
     Path/Op/Helix.py
     Path/Op/MillFace.py
+    Path/Op/Rotate.py
     Path/Op/Pocket.py
     Path/Op/PocketBase.py
     Path/Op/PocketShape.py
