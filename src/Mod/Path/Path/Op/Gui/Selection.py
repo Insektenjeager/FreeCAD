@@ -352,6 +352,7 @@ def select(op):
     opsel["Engrave"] = engraveselect
     opsel["Helix"] = drillselect
     opsel["MillFace"] = pocketselect
+    opsel["Rotate"] = pocketselect
     opsel["Pocket"] = pocketselect
     opsel["Pocket 3D"] = pocketselect
     opsel["Pocket3D"] = pocketselect  # deprecated

@@ -202,6 +202,7 @@ SET(PathPythonOpGui_SRCS
     Path/Op/Gui/Helix.py
     Path/Op/Gui/Hop.py
     Path/Op/Gui/MillFace.py
+    Path/Op/Gui/Rotate.py
     Path/Op/Gui/Pocket.py
     Path/Op/Gui/PocketBase.py
     Path/Op/Gui/PocketShape.py
