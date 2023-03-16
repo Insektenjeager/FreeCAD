@@ -41,26 +41,19 @@ else:
     Path.Log.setLevel(Path.Log.Level.INFO, Path.Log.thisModule())
 
 
-class TaskPanelOpPage(PathPocketBaseGui.TaskPanelOpPage):
+class TaskPanelOpPage(PathOpGui.TaskPanelPage):
     """Page controller class for the face milling operation."""
 
     def getForm(self):
         Path.Log.track()
         """getForm() ... return UI"""
 
-        form = FreeCADGui.PySideUic.loadUi(":/panels/PageOpPocketFullEdit.ui")
-        comboToPropertyMap = [
-            ("cutMode", "CutMode"),
-            ("offsetPattern", "OffsetPattern"),
-            ("boundaryShape", "BoundaryShape"),
-        ]
+        form = FreeCADGui.PySideUic.loadUi(":/panels/PageOpRotateEdit.ui")
 
         enumTups = PathMillFace.ObjectFace.propertyEnumerations(dataType="raw")
         enumTups.update(
             PathPocketShape.ObjectPocket.pocketPropertyEnumerations(dataType="raw")
         )
-
-        self.populateCombobox(form, enumTups, comboToPropertyMap)
         return form
 
     def pocketFeatures(self):
@@ -72,13 +65,13 @@ Command = PathOpGui.SetupOperation(
     "Rotate",
     PathMillFace.Create,
     TaskPanelOpPage,
-    "Rotate",
+    "Path_Rotate",
     QT_TRANSLATE_NOOP("Path_Rotate", "Face"),
     QT_TRANSLATE_NOOP(
-        "Path_MillFace", "Create a Facing Operation from a model or face"
+        "Path_MillFace", "Change the Z- Axis"
     ),
     PathMillFace.SetupProperties,
 )
 
-FreeCAD.Console.PrintLog("Loading PathMillFaceGui... done\n")
+FreeCAD.Console.PrintLog("Loading PathRotateFaceGui... done\n")
 
