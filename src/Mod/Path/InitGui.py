@@ -114,7 +114,6 @@ class PathWorkbench(Workbench):
             "Path_Rotate",
             "Path_Helix",
             "Path_Adaptive",
-            "Path_Rotate",
         ]
         threedopcmdlist = ["Path_Pocket3D"]
         engravecmdlist = ["Path_Engrave", "Path_Deburr", "Path_Vcarve"]

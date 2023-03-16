@@ -29,10 +29,10 @@ import Path.Op.MillFace as PathMillFace
 import Path.Op.PocketShape as PathPocketShape
 import FreeCADGui
 
-__title__ = "Path Face Mill Operation UI"
-__author__ = "sliptonic (Brad Collette)"
+__title__ = "Rotate Operation UI"
+__author__ = "Edler Markus"
 __url__ = "https://www.freecadweb.org"
-__doc__ = "Face Mill operation page controller and command implementation."
+__doc__ = "Rotate Operation Controller."
 
 if False:
     Path.Log.setLevel(Path.Log.Level.DEBUG, Path.Log.thisModule())
@@ -69,11 +69,11 @@ class TaskPanelOpPage(PathPocketBaseGui.TaskPanelOpPage):
 
 
 Command = PathOpGui.SetupOperation(
-    "MillFace",
+    "Rotate",
     PathMillFace.Create,
     TaskPanelOpPage,
-    "Path_Face",
-    QT_TRANSLATE_NOOP("Path_MillFace", "Face"),
+    "Rotate",
+    QT_TRANSLATE_NOOP("Path_Rotate", "Face"),
     QT_TRANSLATE_NOOP(
         "Path_MillFace", "Create a Facing Operation from a model or face"
     ),
