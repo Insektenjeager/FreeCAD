@@ -24,9 +24,7 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 import FreeCAD
 import Path
 import Path.Op.Gui.Base as PathOpGui
-import Path.Op.Gui.PocketBase as PathPocketBaseGui
-import Path.Op.MillFace as PathMillFace
-import Path.Op.PocketShape as PathPocketShape
+import Path.Op.Rotate as PathRotate
 import FreeCADGui
 
 __title__ = "Rotate Operation UI"
@@ -75,10 +73,10 @@ Command = PathOpGui.SetupOperation(
     "Rotate",
     QT_TRANSLATE_NOOP("Path_Rotate", "Face"),
     QT_TRANSLATE_NOOP(
-        "Path_MillFace", "Create a Facing Operation from a model or face"
+        "Path_MillFace", "Create a Rotating Operation from a model or face"
     ),
     PathMillFace.SetupProperties,
 )
 
-FreeCAD.Console.PrintLog("Loading PathMillFaceGui... done\n")
+FreeCAD.Console.PrintLog("Loading PathRotateGui... done\n")
 
