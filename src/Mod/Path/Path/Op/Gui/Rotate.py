@@ -24,6 +24,8 @@ from PySide.QtCore import QT_TRANSLATE_NOOP
 import FreeCAD
 import Path
 import Path.Op.Gui.Base as PathOpGui
+import Path.Base.Gui.Util as PathGuiUtil
+import Path.Op.Gui.Rotate as PathRotateBaseGui
 import Path.Op.Rotate as PathRotate
 import FreeCADGui
 
@@ -38,44 +40,36 @@ if False:
 else:
     Path.Log.setLevel(Path.Log.Level.INFO, Path.Log.thisModule())
 
+translate = FreeCAD.Qt.translate
 
-class TaskPanelOpPage(PathPocketBaseGui.TaskPanelOpPage):
-    """Page controller class for the face milling operation."""
+
+class TaskPanelOpPage(PathOpGui.TaskPanelPage):
+    """Page controller class for the Rotate operation."""
 
     def getForm(self):
-        Path.Log.track()
-        """getForm() ... return UI"""
+        """getForm() ... returns UI"""
+        return FreeCADGui.PySideUic.loadUi(":/panels/PageOpRotateEdit.ui")
+    
+    def getFields(self, obj):
+        """getFields(obj) ... transfers values from UI to obj's properties"""
+        self.updateToolController(obj, self.form.toolController)
+        PathGuiUtil.updateInputField(obj, "Xoffset", self.form.Xoffset)
+        PathGuiUtil.updateInputField(obj, "Yoffset", self.form.Yoffset)
+        PathGuiUtil.updateInputField(obj, "Zoffset", self.form.Zoffset)
+        obj.PointCountX = self.form.PointCountX.value()
+        obj.PointCountY = self.form.PointCountY.value()
+        obj.PointCountZ = self.form.PointCountZ.value()
 
-        form = FreeCADGui.PySideUic.loadUi(":/panels/PageOpPocketFullEdit.ui")
-        comboToPropertyMap = [
-            ("cutMode", "CutMode"),
-            ("offsetPattern", "OffsetPattern"),
-            ("boundaryShape", "BoundaryShape"),
-        ]
-
-        enumTups = PathMillFace.ObjectFace.propertyEnumerations(dataType="raw")
-        enumTups.update(
-            PathPocketShape.ObjectPocket.pocketPropertyEnumerations(dataType="raw")
-        )
-
-        self.populateCombobox(form, enumTups, comboToPropertyMap)
-        return form
-
-    def pocketFeatures(self):
-        """pocketFeatures() ... return FeatureFacing (see PathPocketBaseGui)"""
-        return PathPocketBaseGui.FeatureFacing
 
 
 Command = PathOpGui.SetupOperation(
     "Rotate",
     PathRotate.Create,
     TaskPanelOpPage,
-    "Rotate",
-    QT_TRANSLATE_NOOP("Path_Rotate", "Face"),
-    QT_TRANSLATE_NOOP(
-        "Path_MillFace", "Create a Rotating Operation from a model or face"
-    ),
-    PathMillFace.SetupProperties,
+    "Path_Rotate",
+    QT_TRANSLATE_NOOP("Path_Rotate", "Rotate"),
+    QT_TRANSLATE_NOOP("Path_Rotate", "Create a Rotating Operation from a model or face"),
+    PathRotate.SetupProperties,
 )
 
 FreeCAD.Console.PrintLog("Loading PathRotateGui... done\n")
