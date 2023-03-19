@@ -34,10 +34,9 @@ from lazy_loader.lazy_loader import LazyLoader
 Part = LazyLoader("Part", globals(), "Part")
 
 __title__ = "Rotate Operation"
-__author__ = "sliptonic (Brad Collette)"
+__author__ = "Edler Markus"
 __url__ = "https://www.freecadweb.org"
-__doc__ = "Class and implementation of Mill Facing operation."
-__contributors__ = "russ4262 (Russell Johnson)"
+__doc__ = "Class and implementation of Rotate operation."
 
 
 if False:
@@ -49,7 +48,7 @@ else:
 translate = FreeCAD.Qt.translate
 
 
-class ObjectFace(PathPocketBase.ObjectPocket):
+class ObjectRotate(PathPocketBase.ObjectPocket):
     """Proxy object for Mill Facing operation."""
 
     @classmethod
@@ -403,8 +402,8 @@ def SetupProperties():
 
 
 def Create(name, obj=None, parentJob=None):
-    """Create(name) ... Creates and returns a Mill Facing operation."""
+    """Create(name) ... Creates and returns a Rotate operation."""
     if obj is None:
         obj = FreeCAD.ActiveDocument.addObject("Path::FeaturePython", name)
-    obj.Proxy = ObjectFace(obj, name, parentJob)
+    obj.Proxy = ObjectRotate(obj, name, parentJob)
     return obj

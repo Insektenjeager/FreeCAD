@@ -63,7 +63,7 @@ class TaskPanelOpPage(PathOpGui.TaskPanelPage):
 
 Command = PathOpGui.SetupOperation(
     "Rotate",
-    PathMillFace.Create,
+    PathRotate.Create,
     TaskPanelOpPage,
     "Path_Rotate",
     QT_TRANSLATE_NOOP("Path_Rotate", "Face"),
