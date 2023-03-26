@@ -23,6 +23,7 @@
 
 import FreeCAD
 import Path
+import Path.Op.Base as PathOp
 import Path.Op.Rotate as PathRotate
 import PathScripts.PathUtils as PathUtils
 from PySide.QtCore import QT_TRANSLATE_NOOP
@@ -43,12 +44,12 @@ else:
 translate = FreeCAD.Qt.translate
 
 
-class ObjectRotate():
+class ObjectRotate(PathOp.ObjectOp):
   pass
     
 
 def SetupProperties():
-    setup = ["Xoffset", "Yoffset", "Zoffset", "PointCountY", "OutputFileName"]
+    setup = ["Xoffset", "Yoffset", "Zoffset"]
     return setup
 
 

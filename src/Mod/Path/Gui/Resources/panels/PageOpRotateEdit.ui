@@ -17,49 +17,43 @@
    <item>
     <widget class="QGroupBox" name="groupBox">
      <property name="title">
-      <string>XYZ-Offset</string>
+      <string>Rotate-XYZ</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="3" column="2">
-       <widget class="Gui::InputField" name="Yoffset">
-        <property name="unit" stdset="0">
-         <string notr="true"/>
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="radioButton">
+        <property name="text">
+         <string>Rotate Around Y</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="radioButton_3">
+        <property name="text">
+         <string>Rotate Around X</string>
         </property>
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="zlabel">
+       <widget class="QRadioButton" name="radioButton_2">
         <property name="text">
-         <string>Z Offset</string>
+         <string>Rotate Around Z</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="Gui::InputField" name="Xoffset">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="unit" stdset="0">
-         <string notr="true"/>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="ylabel">
-        <property name="text">
-         <string>Y Offset</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="xlabel">
-        <property name="text">
-         <string>X Offset</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="2">
-       <widget class="Gui::InputField" name="Zoffset"/>
+      <item row="5" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Degree°</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QSpinBox" name="spinBox"/>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>
@@ -70,13 +64,6 @@
       <string>Rotate Around Z-Axis</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
-      <item row="1" column="1">
-       <widget class="QPushButton" name="pushButton">
-        <property name="text">
-         <string>---&gt;</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="pushButton_2">
         <property name="text">
@@ -84,31 +71,34 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>---&gt;</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Reverse Z-Axis</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushButton_3">
+        <property name="text">
+         <string>&lt;-&gt;</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>Gui::InputField</class>
-   <extends>QLineEdit</extends>
-   <header>Gui/InputField.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
