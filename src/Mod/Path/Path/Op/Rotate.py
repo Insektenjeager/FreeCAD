@@ -45,11 +45,13 @@ translate = FreeCAD.Qt.translate
 
 
 class ObjectRotate(PathOp.ObjectOp):
-  pass
+  
+    def opFeatures(self, obj):
+        return PathOp.FeatureTool
     
 
 def SetupProperties():
-    setup = ["Xoffset", "Yoffset", "Zoffset"]
+    setup = []
     return setup
 
 

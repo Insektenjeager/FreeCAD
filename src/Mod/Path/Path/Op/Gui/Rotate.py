@@ -22,12 +22,13 @@
 
 from PySide.QtCore import QT_TRANSLATE_NOOP
 import FreeCAD
+import FreeCADGui
 import Path
 import Path.Op.Gui.Base as PathOpGui
 import Path.Base.Gui.Util as PathGuiUtil
 import Path.Op.Gui.Rotate as PathRotateBaseGui
 import Path.Op.Rotate as PathRotate
-import FreeCADGui
+
 
 __title__ = "Rotate Operation UI"
 __author__ = "Edler Markus"
@@ -49,17 +50,6 @@ class TaskPanelOpPage(PathOpGui.TaskPanelPage):
     def getForm(self):
         """getForm() ... returns UI"""
         return FreeCADGui.PySideUic.loadUi(":/panels/PageOpRotateEdit.ui")
-    
-    def getFields(self, obj):
-        """getFields(obj) ... transfers values from UI to obj's properties"""
-        self.updateToolController(obj, self.form.toolController)
-        PathGuiUtil.updateInputField(obj, "Xoffset", self.form.Xoffset)
-        PathGuiUtil.updateInputField(obj, "Yoffset", self.form.Yoffset)
-        PathGuiUtil.updateInputField(obj, "Zoffset", self.form.Zoffset)
-        obj.PointCountX = self.form.PointCountX.value()
-        obj.PointCountY = self.form.PointCountY.value()
-        obj.PointCountZ = self.form.PointCountZ.value()
-
 
 
 Command = PathOpGui.SetupOperation(
